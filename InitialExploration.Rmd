@@ -1,0 +1,45 @@
+---
+title: "InitialExploration"
+author: "Celina"
+date: "2/21/2022"
+output: html_document
+---
+
+# Load in Packages and Data
+```{r, include = FALSE}
+library(readr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+data <- read_csv("Alzheimer_s_Disease_and_Healthy_Aging_Data.csv") %>%
+  select(-c(RowId, 
+            Response, 
+            Data_Value_Alt, 
+            ResponseID, 
+            StratificationCategoryID3,
+            Stratification3, 
+            StratificationID3, 
+            StratificationCategory3,
+            Report, 
+            Geolocation, 
+            ClassID, 
+            TopicID, 
+            Data_Value_Unit, 
+            DataValueTypeID, 
+            Data_Value_Footnote_Symbol, 
+            Sample_Size, 
+            Data_Value_Footnote, 
+            StratificationCategoryID1, StratificationID1, StratificationCategory1, 
+            LocationAbbr, Datasource, 
+            QuestionID, LocationID
+            )) %>%
+  drop_na(Data_Value) %>%
+  rename(Age_Group = Stratification1) %>%
+  pivot_wider(names_from = StratificationCategory2, values_from = Stratification2, values_fill = "All") %>%
+  select(-c(StratificationCategoryID2, StratificationID2, Overall)) 
+```
+
+```{r}
+data
+```
+
