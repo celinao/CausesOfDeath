@@ -2,7 +2,7 @@
 title: "InitialExploration"
 author: "Celina"
 date: "2/21/2022"
-output: html_document
+output: github_document
 ---
 
 # Load in Packages and Data
@@ -11,6 +11,7 @@ library(readr)
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
+library(patchwork)
 data <- read_csv("Alzheimer_s_Disease_and_Healthy_Aging_Data.csv") %>%
   select(-c(RowId, 
             Response, 
@@ -37,36 +38,74 @@ data <- read_csv("Alzheimer_s_Disease_and_Healthy_Aging_Data.csv") %>%
   pivot_wider(names_from = StratificationCategory2, values_from = Stratification2, values_fill = "Overall") %>%
   select(-c(StratificationCategoryID2, StratificationID2, Overall)) %>%
   rename(Age_Group = Stratification1, Race_Ethnicity = `Race/Ethnicity`)
+
+write_csv(data, "derived_data\\tidy_data.csv")
 ```
 
-```{r}
-summary(data)
-
-# Age_Group, Gender, Race_Ethnicity
-data %>% 
-  filter(Gender != "Overall") %>% 
+```{r, echo=FALSE}
+gender_plot <- data %>%
+  filter(Gender != "Overall") %>%
+  group_by(Gender) %>%
+  mutate(Count = n()) %>% 
   ggplot() + 
-  geom_bar(aes(Gender))
+  geom_bar(aes(y = reorder(Gender, Count)), fill = "cadetblue4") + 
+  labs(title = "Gender Distribution", y = "Gender") + 
+  scale_x_discrete(expand = c(0,0)) + 
+  theme(panel.grid = element_blank())
 
-data %>%
+age_plot <- data %>%
   filter(Age_Group != "Overall") %>%
+  group_by(Age_Group) %>%
+  mutate(Count = n()) %>% 
   ggplot() + 
-  geom_bar(aes(Age_Group))
+  geom_bar(aes(y = reorder(Age_Group, Count)), fill = "cadetblue4") + 
+  labs(title = "Age Distribution", y = "Age Group") + 
+  scale_x_discrete(expand = c(0,0)) + 
+  theme(panel.grid = element_blank())
 
-data %>%
-  filter(Race_Ethnicity != "Overall") %>% 
+race_plot <- data %>%
+  filter(Race_Ethnicity != "Overall") %>%
+  group_by(Race_Ethnicity) %>%
+  mutate(Count = n()) %>% 
   ggplot() + 
-  geom_bar(aes(Race_Ethnicity, fill=Race_Ethnicity))
+  geom_bar(aes(y = reorder(Race_Ethnicity, Count)), fill = "cadetblue4") + 
+  labs(title = "Race and Ethnicity Distribution", y = "Race & Ethnicity") + 
+  scale_x_discrete(expand = c(0,0)) + 
+  theme(panel.grid = element_blank())
 
-data %>% 
+region_plot <- data %>%
+  filter(LocationDesc %in% c("West", "Midwest", "South", "Northeast")) %>%
+  group_by(LocationDesc) %>%
+  mutate(Count = n()) %>% 
   ggplot() + 
-  geom_bar(aes(y = (LocationDesc)))
+  geom_bar(aes(y = reorder(LocationDesc, Count)), fill = "cadetblue4") + 
+  labs(title = "Location Distribution by Region", y = "Region") + 
+  scale_x_discrete(expand = c(0,0)) + 
+  theme(panel.grid = element_blank())
 
-ggplot(data ) + 
-  geom_bar(aes(Class))
+(age_plot + gender_plot) / (region_plot + race_plot)
 ```
 
-```{r}
-data
+```{r fig.width=7, fig.height=8, echo=FALSE}
+data %>%
+  filter(!LocationDesc %in% c("United States, DC & Territories", "West", "Midwest", "South", "Northeast")) %>%
+  group_by(LocationDesc) %>%
+  mutate(Count = n()) %>% 
+  ggplot() + 
+  geom_bar(aes(y = reorder(LocationDesc, Count)), fill = "cadetblue4") + 
+  labs(title = "Location Distribution by State", y = "State") + 
+  scale_x_discrete(expand = c(0,0)) + 
+  theme(panel.grid = element_blank())
+```
+
+```{r, echo=FALSE}
+data %>%
+  group_by(Class) %>%
+  mutate(Count = n()) %>% 
+  ggplot() + 
+  geom_bar(aes(y = reorder(Class, Count)), fill = "cadetblue4") + 
+  labs(title = "Question Classes", y = "Class") + 
+  scale_x_discrete(expand = c(0,0)) + 
+  theme(panel.grid = element_blank())
 ```
 
