@@ -34,9 +34,36 @@ data <- read_csv("Alzheimer_s_Disease_and_Healthy_Aging_Data.csv") %>%
             QuestionID, LocationID
             )) %>%
   drop_na(Data_Value) %>%
-  rename(Age_Group = Stratification1) %>%
-  pivot_wider(names_from = StratificationCategory2, values_from = Stratification2, values_fill = "All") %>%
-  select(-c(StratificationCategoryID2, StratificationID2, Overall)) 
+  pivot_wider(names_from = StratificationCategory2, values_from = Stratification2, values_fill = "Overall") %>%
+  select(-c(StratificationCategoryID2, StratificationID2, Overall)) %>%
+  rename(Age_Group = Stratification1, Race_Ethnicity = `Race/Ethnicity`)
+```
+
+```{r}
+summary(data)
+
+# Age_Group, Gender, Race_Ethnicity
+data %>% 
+  filter(Gender != "Overall") %>% 
+  ggplot() + 
+  geom_bar(aes(Gender))
+
+data %>%
+  filter(Age_Group != "Overall") %>%
+  ggplot() + 
+  geom_bar(aes(Age_Group))
+
+data %>%
+  filter(Race_Ethnicity != "Overall") %>% 
+  ggplot() + 
+  geom_bar(aes(Race_Ethnicity, fill=Race_Ethnicity))
+
+data %>% 
+  ggplot() + 
+  geom_bar(aes(y = (LocationDesc)))
+
+ggplot(data ) + 
+  geom_bar(aes(Class))
 ```
 
 ```{r}
