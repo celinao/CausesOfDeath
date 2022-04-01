@@ -1,0 +1,41 @@
+---
+title: "shinyApp"
+author: "Celina"
+date: '2022-04-01'
+output: html_document
+---
+
+This RMD is for creating a basic shiny app. 
+
+```{r}
+country_list <- unique(clean_deaths$Entity)
+```
+
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  selectizeInput(
+    inputId = 'search',
+    label = 'Search',
+    choices = country_list,
+    selected = NULL,
+    multiple = TRUE, # allow for multiple inputs
+    options = list(create = FALSE) # if TRUE, allows newly created inputs
+  ), 
+  textOutput("result")
+)
+
+# Server logic
+server <- function(input, output) {
+  output$result <- renderText({
+      paste("You chose", input$search)
+    })
+}
+
+
+server <- function(input, output, session) {}
+shinyApp(ui = ui, server = server)
+```
+
