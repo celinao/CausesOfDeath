@@ -7,35 +7,57 @@ output: html_document
 
 This RMD is for creating a basic shiny app. 
 
+https://stackoverflow.com/questions/35265920/auto-complete-and-selection-of-multiple-values-in-text-box-shiny
+
 ```{r}
+clean_deaths <- readr::read_csv("data//20222703 Causes Of Death Clean Output V2.0.csv") %>%
+  rename_all(funs(str_replace_all(., " ", "_")))
+
 country_list <- unique(clean_deaths$Entity)
+year_list <- unique(clean_deaths$Year)
 ```
 
-
 ```{r}
-library(shiny)
+ui = fluidPage(
+  sidebarLayout(
+    
+    sidebarPanel(
+      
+      selectizeInput(
+        selected = "Afghanistan", 
+        # Can only choose an already existing value. Maybe create a new aggregate for "ALL" in new dataset
+        inputId = "state", 
+        label = h3("Choose a state:"),
+        choices = country_list, 
+        multiple = TRUE,
+        options = list(create = FALSE), 
+        ), 
+      
+      sliderInput("yearRange", 
+                  label = h3("Year Range:"),
+                  min = year_list[1], 
+                  max = year_list[length(year_list)], 
+                  value = c(year_list[1], year_list[length(year_list)]),
+                  sep=""
+                  )
+      ), 
+    
+    mainPanel(
+      textOutput("countries"), 
+      textOutput("years")
+      )
+    )
+  )
 
-ui <- fluidPage(
-  selectizeInput(
-    inputId = 'search',
-    label = 'Search',
-    choices = country_list,
-    selected = NULL,
-    multiple = TRUE, # allow for multiple inputs
-    options = list(create = FALSE) # if TRUE, allows newly created inputs
-  ), 
-  textOutput("result")
-)
-
-# Server logic
-server <- function(input, output) {
-  output$result <- renderText({
-      paste("You chose", input$search)
-    })
+server = function(input, output) {
+  output$countries <- renderText({
+    input$state
+  }) 
+  output$years <- renderText({
+    input$yearRange
+  })
 }
 
-
-server <- function(input, output, session) {}
 shinyApp(ui = ui, server = server)
 ```
 
