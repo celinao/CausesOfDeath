@@ -1,25 +1,38 @@
 # DataVisualizations
 
-Potential New Datasets: 
-
-**Personal Key Indicators of Heart Disease**  
-https://www.kaggle.com/datasets/kamilpytlak/personal-key-indicators-of-heart-disease 
+---
 
 **Causes of Death - Our World In Data**
 https://www.kaggle.com/datasets/ivanchvez/causes-of-death-our-world-in-data
 
-**Amazon Top 50 Bestselling Books 2009-2019** 
-https://www.kaggle.com/datasets/sootersaalu/amazon-top-50-bestselling-books-2009-2019 
+---
 
-**Data Scientist General Skills 2018 Revised** 
-https://www.kaggle.com/datasets/discdiver/data-scientist-general-skills-2018-revised  
+## Moving Forwared  
 
+**How To Divide Work: **
+1. Create Nicely formatted Graphs 
+2. Create graphs that show different values based on inputs 
+3. Get correct inputs from Shiny App 
+4. Look for interesting points/Start the write-up 
 
+**Steps**
+0. Format Data to be a proportion of deaths instead of total deaths (new csv) 
+1. Make a nice bar chart of disease & deaths. 
+2. Shiny app shows bar chart based on country selection 
+3. Country selection in the format of autofill text input 
+4. Add year selection slider or multiselect (both?) 
+5. Add text explanation 
+	- You can use these selectors to examine...
+	- Interesting Fact! Compare x and y and notice how... 
+6. Fun formatting of Shiny App? 
+
+**Optional**: 
+5. Add tab to investigate Cause -> by year or country... 
+
+---
 
 ## Milestone 3: 
-Two Potential Formats: 
-- Format 1: Scientific Journal Format (i.e. Report with static visualizations) 
-- Format 2: Shiny App (Interactive visualization that could be hosted on a public website) 
+Formats: Shiny App (Interactive visualization that could be hosted on a public website) 
 
 Visualizations: 
 - Do visualizations support the most important queries? 
