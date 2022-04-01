@@ -1,0 +1,29 @@
+---
+title: "Creating Graphs"
+author: "Celina"
+date: '2022-04-01'
+output: html_document
+---
+
+```{r}
+library("tidyverse")
+library(dplyr)
+library(ggplot2)
+```
+
+
+```{r}
+# This seems pretty good. I'd haven't looked at the unclean file but, I'd stick to the clean one. 
+clean_deaths <- readr::read_csv("data//20222703 Causes Of Death Clean Output V2.0.csv") %>%
+  rename_all(funs(str_replace_all(., " ", "_")))
+
+clean_deaths %>%
+  filter(Entity %in% c("Afghanistan", "Denmark"), Year %in% c(1990, 2019)) %>% 
+  mutate(Year = factor(Year)) %>%
+  ggplot + 
+  geom_col(position = "dodge", aes(x = Death_Numbers, y = reorder(Causes_name, Death_Numbers), fill=Year)) +
+  facet_wrap(~Entity) + 
+  theme(legend.position="bottom")
+
+```
+
