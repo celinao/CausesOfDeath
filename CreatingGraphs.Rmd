@@ -9,21 +9,80 @@ output: html_document
 library("tidyverse")
 library(dplyr)
 library(ggplot2)
+library(readr)
 ```
 
 
 ```{r}
 # This seems pretty good. I'd haven't looked at the unclean file but, I'd stick to the clean one. 
 clean_deaths <- readr::read_csv("data//20222703 Causes Of Death Clean Output V2.0.csv") %>%
-  rename_all(funs(str_replace_all(., " ", "_")))
+  rename_all(funs(str_replace_all(., " ", "_"))) %>%
+  select(-c(Causes_Full_Description, Code)) %>%
+  mutate(Death_Numbers = ifelse(is.na(Death_Numbers), 0, Death_Numbers))
 
 clean_deaths %>%
   filter(Entity %in% c("Afghanistan", "Denmark"), Year %in% c(1990, 2019)) %>% 
   mutate(Year = factor(Year)) %>%
-  ggplot + 
+  ggplot() + 
   geom_col(position = "dodge", aes(x = Death_Numbers, y = reorder(Causes_name, Death_Numbers), fill=Year)) +
   facet_wrap(~Entity) + 
-  theme(legend.position="bottom")
+  theme_minimal() + 
+  theme(legend.position="bottom") +
+  labs(x="Number of Deaths", y = "Cause of Death") + 
+  scale_x_continuous(expand = c(0, 0))
 
+
+percentStyle = FALSE
+clean_deaths %>%
+  filter(Entity %in% c("Afghanistan", "Denmark"), Year %in% c(1990, 2019)) %>% 
+  mutate(Year = factor(Year)) %>%
+  group_by(Entity, Year) %>%
+    mutate(Total_Deaths = sum(Death_Numbers, na.rm = TRUE), 
+           Percent_Deaths = 100*Death_Numbers/Total_Deaths, 
+           Year = factor(Year)) %>%
+    ungroup() %>%
+    ggplot() +
+      geom_col(position = "dodge",
+               aes(x = Percent_Deaths,
+                   y = reorder(Causes_name, Percent_Deaths),
+                   fill=Year)) 
+
+```
+
+```{r}
+c1 <- clean_deaths %>%
+  filter(Entity %in% c("Afghanistan", "Denmark"), Year %in% c(1990, 2019)) %>% 
+  group_by(Entity, Year) %>%
+  mutate(Total_Deaths = sum(Death_Numbers, na.rm = TRUE), 
+         Percent_Deaths = 100*Death_Numbers/Total_Deaths)
+
+clean_deaths %>%
+  filter(Entity %in% c("Afghanistan", "Denmark"), Year %in% c(1990, 2019)) %>%
+  mutate(Year = factor(Year)) %>%
+  ggplot + 
+  geom_col(position = "dodge", aes(x = Percent_Deaths, y = reorder(Causes_name, Percent_Deaths), fill=Year)) +
+  facet_wrap(~Entity) + 
+  theme_minimal() + 
+  theme(legend.position="bottom") +
+  labs(x="Percent of Deaths", y = "Cause of Death") + 
+  scale_x_continuous(expand = c(0, 0))
+
+clean_deaths %>%
+  filter(is.na(Death_Numbers))
+```
+
+
+```{r}
+# Create a summary row, and find percentages 
+
+deaths_withAll <- clean_deaths %>%
+  group_by(Year, Causes_name) %>%
+  summarise(Death_Numbers = sum(Death_Numbers, na.rm=TRUE), 
+         Entity = "All Countries") %>%
+  ungroup() %>%
+  full_join(clean_deaths, by = c("Year", "Causes_name", "Death_Numbers", "Entity")) %>%
+  mutate(Year = factor(Year))
+
+write_csv(deaths_withAll, "data//deaths_with_AllCountries.csv")
 ```
 

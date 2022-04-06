@@ -9,13 +9,75 @@ This RMD is for creating a basic shiny app.
 
 https://stackoverflow.com/questions/35265920/auto-complete-and-selection-of-multiple-values-in-text-box-shiny
 
-```{r}
-clean_deaths <- readr::read_csv("data//20222703 Causes Of Death Clean Output V2.0.csv") %>%
-  rename_all(funs(str_replace_all(., " ", "_")))
+```{r, include=FALSE}
+library(shiny)
+library(shinyWidgets)
+library("tidyverse")
+library(dplyr)
+library(ggplot2)
+library(readr)
+```
 
+```{r}
+clean_deaths <- readr::read_csv("data//deaths_with_AllCountries.csv")
 country_list <- unique(clean_deaths$Entity)
 year_list <- unique(clean_deaths$Year)
 ```
+
+```{r}
+create_Percent_Graph <- function(selectedCountries, selectedYearRange) {
+  p <- clean_deaths %>%
+    filter(Entity %in% selectedCountries, 
+           Year %in% selectedYearRange) %>%
+    group_by(Entity, Year) %>%
+    mutate(Total_Deaths = sum(Death_Numbers, na.rm = TRUE), 
+           Percent_Deaths = 100*Death_Numbers/Total_Deaths, 
+           Year = factor(Year)) %>%
+    ungroup() %>%
+    ggplot() +
+      geom_col(position = "dodge",
+               aes(x = Percent_Deaths,
+                   y = reorder(Causes_name, Percent_Deaths),
+                   fill=Year)) +
+      facet_wrap(~Entity) +
+      theme_minimal() +
+      theme(legend.position="bottom") +
+      labs(x="Percent of Deaths", y = "Cause of Death") +
+      scale_x_continuous(expand = c(0, 0))
+  return(p)
+}
+
+create_Number_Graph <- function(selectedCountries, selectedYearRange) {
+  p <- clean_deaths %>%
+    filter(Entity %in% selectedCountries, 
+           Year %in% selectedYearRange) %>%
+    mutate(Year = factor(Year)) %>%
+    ggplot() +
+      geom_col(position = "dodge",
+               aes(x = Death_Numbers,
+                   y = reorder(Causes_name, Death_Numbers),
+                   fill=Year)) + 
+      facet_wrap(~Entity) +
+      theme_minimal() +
+      theme(legend.position="bottom") +
+      labs(x="Number of Deaths", y = "Cause of Death") +
+      scale_x_continuous(expand = c(0, 0))
+  return(p)
+}
+
+# create_Percent_Graph(c("Afghanistan"), c(1990, 2000))
+
+# ifelse(TRUE,
+#        create_Percent_Graph(c("Afghanistan"), c(1990, 2000)), 
+#        create_Number_Graph(c("Afghanistan"), c(1990, 2000)))
+# 
+# if(TRUE){
+#   create_Percent_Graph(c("Afghanistan"), c(1990, 2000))
+# }else{
+#   create_Number_Graph(c("Afghanistan"), c(1990, 2000))
+# }
+```
+
 
 ```{r}
 ui = fluidPage(
@@ -24,9 +86,8 @@ ui = fluidPage(
     sidebarPanel(
       
       selectizeInput(
-        selected = "Afghanistan", 
-        # Can only choose an already existing value. Maybe create a new aggregate for "ALL" in new dataset
-        inputId = "state", 
+        selected = "All Countries", 
+        inputId = "country", 
         label = h3("Choose a state:"),
         choices = country_list, 
         multiple = TRUE,
@@ -39,25 +100,42 @@ ui = fluidPage(
                   max = year_list[length(year_list)], 
                   value = c(year_list[1], year_list[length(year_list)]),
                   sep=""
-                  )
+                  ), 
+      
+      switchInput(
+        inputId = "yStyle",
+        onLabel = "Number", 
+        offLabel = "Percent", 
+        size = "mini"
+      )
       ), 
     
     mainPanel(
       textOutput("countries"), 
-      textOutput("years")
+      textOutput("years"),
+      plotOutput("barChart")
       )
     )
   )
 
 server = function(input, output) {
   output$countries <- renderText({
-    input$state
+    input$country
   }) 
   output$years <- renderText({
     input$yearRange
+  })
+  output$barChart <- renderPlot({
+    if(input$yStyle){
+      create_Number_Graph(input$country, input$yearRange)
+    }else{
+      create_Percent_Graph(input$country, input$yearRange)
+    }
   })
 }
 
 shinyApp(ui = ui, server = server)
 ```
+
+
 
