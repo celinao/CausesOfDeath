@@ -10,18 +10,22 @@ This RMD is for creating a basic shiny app.
 https://stackoverflow.com/questions/35265920/auto-complete-and-selection-of-multiple-values-in-text-box-shiny
 
 ```{r, include=FALSE}
+# I had an issue getting shinythemes to work. To fix it install shinythemes via: devtools::install_github('rstudio/shinythemes')
+
 library(shiny)
 library(shinyWidgets)
+library(shinythemes)
 library("tidyverse")
 library(dplyr)
 library(ggplot2)
 library(readr)
 ```
 
-```{r}
+```{r, include=FALSE}
 clean_deaths <- readr::read_csv("data//deaths_with_AllCountries.csv")
 country_list <- unique(clean_deaths$Entity)
 year_list <- unique(clean_deaths$Year)
+cause_list <- unique(clean_deaths$Causes_name)
 ```
 
 ```{r}
@@ -66,55 +70,129 @@ create_Number_Graph <- function(selectedCountries, selectedYearRange) {
       scale_x_continuous(expand = c(0, 0))
   return(p)
 }
+
+create_Number_Causes_Graph <- function(selectedCountries, selectedCauses) {
+  p <- clean_deaths %>%
+    filter(Entity %in% selectedCountries, 
+           Causes_name %in% selectedCauses) %>%
+    ggplot() + 
+    geom_line(aes(x = Year, y = Death_Numbers, col = Entity)) + 
+    facet_wrap(~Causes_name) + 
+    theme_minimal() +
+    theme(legend.position="bottom") +
+    labs(x="Number of Deaths", y = "Year") +
+    guides(col=guide_legend(title="Country"))
+  return(p)
+}
+
+create_Percent_Causes_Graph <- function(selectedCountries, selectedCauses) {
+  p <- clean_deaths %>%
+    filter(Entity %in% selectedCountries, 
+           Causes_name %in% selectedCauses) %>%
+    group_by(Entity, Causes_name) %>%
+    mutate(Total_Deaths = sum(Death_Numbers, na.rm = TRUE), 
+           Percent_Deaths = 100*Death_Numbers/Total_Deaths) %>%
+    ungroup() %>%
+    ggplot() + 
+    geom_line(aes(x = Year, y = Percent_Deaths, col = Entity)) + 
+    facet_wrap(~Causes_name) + 
+    theme_minimal() +
+    theme(legend.position="bottom") +
+    labs(x="Percent of Deaths", y = "Year") +
+    guides(col=guide_legend(title="Country"))
+  return(p)
+}
 ```
 
 
 ```{r}
 ui = fluidPage(
-  sidebarLayout(
-    
-    sidebarPanel(
-      
-      selectizeInput(
-        selected = "All Countries", 
-        inputId = "country", 
-        label = h3("Choose a state:"),
-        choices = country_list, 
-        multiple = TRUE,
-        options = list(create = FALSE), 
-        ), 
-      
-      sliderInput("yearRange", 
-                  label = h3("Year Range:"),
-                  min = year_list[1], 
-                  max = year_list[length(year_list)], 
-                  value = c(year_list[1], year_list[length(year_list)]),
-                  sep=""
-                  ), 
-      
-      switchInput(
-        inputId = "yStyle",
-        onLabel = "Number", 
-        offLabel = "Percent", 
-        size = "mini"
-      )
-      ), 
-    
-    mainPanel(
-      textOutput("countries"), 
-      textOutput("years"),
-      plotOutput("barChart")
-      )
-    )
+  theme = shinytheme("superhero"),
+  
+  # Create Tabs in the NavBar 
+  navbarPage("Causes of Death",
+             
+             # Tab 1: Deaths by Country 
+             tabPanel("Deaths by Country",
+                      sidebarLayout(
+                        # Sidebar 
+                        sidebarPanel(
+                          
+                          # Select Countries 
+                          selectizeInput(
+                            selected = "All Countries", 
+                            inputId = "country", 
+                            label = h3("Choose a Country:"),
+                            choices = country_list, 
+                            multiple = TRUE,
+                            options = list(create = FALSE), 
+                            ), 
+                          
+                          # Select two years to facet by. 
+                          sliderInput("yearRange", 
+                                      label = h3("Year Range:"),
+                                      min = year_list[1], 
+                                      max = year_list[length(year_list)], 
+                                      value = c(year_list[1], year_list[length(year_list)]),
+                                      sep=""
+                                      ), 
+                          
+                          # Toggle between Number and Percent Graphs 
+                          switchInput(
+                            inputId = "yStyle",
+                            onLabel = "Number", 
+                            offLabel = "Percent", 
+                            size = "mini"
+                            )
+                          ), 
+                        
+                        # Main Panel: 
+                        mainPanel(
+                          plotOutput("barChart")
+                          )
+                        )
+                      ), 
+             
+             # Tab 2: Deaths by Cause
+             tabPanel("Deaths by Cause",
+             sidebarLayout(
+               sidebarPanel(
+                 # Select Countries 
+                          selectizeInput(
+                            selected = "All Countries", 
+                            inputId = "country2", 
+                            label = h3("Choose a Country:"),
+                            choices = country_list, 
+                            multiple = TRUE,
+                            options = list(create = FALSE), 
+                            ),
+                          
+                 # Select Causes of Death 
+                 selectizeInput(
+                      selected = "Acute hepatitis",
+                      inputId = "causes",
+                      label = h3("Choose a Cause:"),
+                      choices = cause_list,
+                      multiple = TRUE,
+                      options = list(create = FALSE),
+                      ), 
+                 # Toggle between Number and Percent Graphs 
+                switchInput(
+                  inputId = "yStyle2",
+                  onLabel = "Number", 
+                  offLabel = "Percent", 
+                  size = "mini"
+                  )
+               ),
+               mainPanel(
+                 plotOutput("causeChart")
+               )
+             )
+             )
+             )
   )
 
 server = function(input, output) {
-  output$countries <- renderText({
-    input$country
-  }) 
-  output$years <- renderText({
-    input$yearRange
-  })
   output$barChart <- renderPlot({
     if(input$yStyle){
       create_Number_Graph(input$country, input$yearRange)
@@ -122,10 +200,17 @@ server = function(input, output) {
       create_Percent_Graph(input$country, input$yearRange)
     }
   })
+  
+  output$causeChart <- renderPlot({
+    if(input$yStyle2){
+      create_Number_Causes_Graph(input$country2, input$causes)
+    }else{
+      create_Percent_Causes_Graph(input$country2, input$causes)
+    }
+  })
 }
 
 shinyApp(ui = ui, server = server)
 ```
-
 
 
