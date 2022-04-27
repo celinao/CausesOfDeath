@@ -28,6 +28,12 @@ country_list <- unique(clean_deaths$Entity)
 year_list <- unique(clean_deaths$Year)
 cause_list <- unique(clean_deaths$Causes_name)
 
+# Adding Country Code for map 
+map_data <- clean_deaths %>%
+  filter(Entity != "All Countries") %>%
+  mutate(CountryCode = countrycode(Entity , origin='country.name' , destination='iso3c'))
+map_regions <- c("World", levels(unique(getMap()$REGION)))
+
 # Helper Functions to create graphs 
 create_Percent_Graph <- function(selectedCountries, selectedYearRange) {
   p <- clean_deaths %>%
@@ -105,6 +111,27 @@ create_Percent_Causes_Graph <- function(selectedCountries, selectedCauses) {
     scale_color_brewer(palette = color_theme) +
     th
   return(p)
+}
+
+palette = colorRampPalette(brewer.pal(n=7, name='Oranges'))(7)
+worldmap <- function(year, Cause, region){
+  
+  new_data <- map_data %>%
+    filter(Year == year, Causes_name == Cause) %>%
+    joinCountryData2Map(joinCode = "ISO3" , nameJoinColumn = "CountryCode")
+  
+  iter_num <- max(new_data$Death_Numbers, na.rm = TRUE)/8
+  
+  mapCountryData(new_data, 
+           nameColumnToPlot='Death_Numbers', 
+           missingCountryCol='dark grey', 
+           mapTitle=paste(Cause, year, sep = " - "),
+           addLegend=TRUE,
+           colourPalette = palette,
+           mapRegion = region, 
+           oceanCol='light blue', 
+           catMethod = seq(0, max(new_data$Death_Numbers, na.rm = TRUE)+iter_num, iter_num)
+  ) + th
 }
 
 # Shiny App 
@@ -190,6 +217,46 @@ ui = fluidPage(
                           plotOutput("causeChart")
                         )
                       )
+             ), 
+             
+             # Tab 3: World map by cause
+             tabPanel("World Map",
+                      sidebarLayout(
+                        sidebarPanel(
+                          # Select Causes of Death 
+                          selectizeInput(
+                            selected = "Acute hepatitis",
+                            inputId = "mapCause",
+                            label = h3("Choose a Cause:"),
+                            choices = cause_list,
+                            multiple = FALSE,
+                            options = list(create = FALSE),
+                          ),
+                          
+                          # Select Year Shown 
+                          selectizeInput(
+                            selected = max(year_list),
+                            inputId = "mapYear",
+                            label = h3("Choose a Year:"),
+                            choices = year_list,
+                            multiple = FALSE,
+                            options = list(create = FALSE),
+                          ),
+                          
+                          # Select Region View 
+                          selectizeInput(
+                            selected = "World",
+                            inputId = "region",
+                            label = h3("Zoom into a Region:"),
+                            choices = map_regions,
+                            multiple = FALSE,
+                            options = list(create = FALSE),
+                          )
+                        ),
+                        mainPanel(
+                          plotOutput("map"), width = "100%"
+                        )
+                      )
              )
   )
 )
@@ -210,6 +277,10 @@ server = function(input, output) {
       create_Percent_Causes_Graph(input$country2, input$causes)
     }
   }, height = 600)
+  
+  output$map <- renderPlot({
+    worldmap(input$mapYear, input$mapCause, input$region)
+  })
 }
 
 shinyApp(ui = ui, server = server)

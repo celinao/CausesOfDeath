@@ -16,9 +16,6 @@ library(shiny)
 library(shinyWidgets)
 library(shinythemes)
 library("tidyverse")
-library(dplyr)
-library(ggplot2)
-library(readr)
 ```
 
 ```{r, include=FALSE}
@@ -213,4 +210,42 @@ server = function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
+
+
+# Creating Map 
+```{r}
+library(spData)
+library(rworldmap)
+library(countrycode)
+library(RColorBrewer)
+
+temp_deaths <- clean_deaths %>%
+  filter(Entity != "All Countries") %>%
+  mutate(CountryCode = countrycode(Entity , origin='country.name' , destination='iso3c'))
+
+palette = colorRampPalette(brewer.pal(n=7, name='Oranges'))(7)
+
+worldmap <- function(year, Cause){
+  
+  new_data <- temp_deaths %>%
+    filter(Year == year, Causes_name == Cause) %>%
+    joinCountryData2Map(joinCode = "ISO3" , nameJoinColumn = "CountryCode") 
+  
+  iter_num <- max(new_data$Death_Numbers, na.rm = TRUE)/8
+  
+  mapCountryData(new_data, nameColumnToPlot='Death_Numbers', 
+           mapRegion='Europe',
+           missingCountryCol='dark grey', 
+           mapTitle=paste(Cause, year, sep = " - "),
+           addLegend=TRUE,
+           colourPalette = palette,
+           oceanCol='light blue', 
+           catMethod = seq(0, max(new_data$Death_Numbers, na.rm = TRUE)+iter_num, iter_num)
+           )
+}
+
+worldmap(2007, "Cardiovascular diseases")
+ggplot(getMap()) + 
+  geom_sf()
+```
 
