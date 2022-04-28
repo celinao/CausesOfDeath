@@ -3,6 +3,9 @@ library(shiny)
 library(shinyWidgets)
 library(shinythemes)
 library("tidyverse")
+library(countrycode)
+library(rworldmap)
+library(RColorBrewer)
 
 th <- theme_minimal() + 
   theme(
