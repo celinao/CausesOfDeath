@@ -1,5 +1,4 @@
 # Install Packages 
-library(shiny)
 library(shinyWidgets)
 library(shinythemes)
 library("tidyverse")
@@ -13,7 +12,7 @@ th <- theme_minimal() +
     panel.grid = element_blank(),
     panel.background = element_rect(fill = "#4d5d6c", color = "#4d5d6c"),
     plot.background = element_rect(fill = "#2b3e4f", color = "#2b3e4f"),
-    axis.text = element_text(color = "#ffffff"),
+    axis.text = element_text(size = 14, color = "#ffffff"),
     axis.title = element_text(size = 16, color = "#ffffff"),
     strip.text = element_text(color = "#ffffff"), 
     legend.text = element_text(color = "#ffffff"),
@@ -35,10 +34,11 @@ cause_list <- unique(clean_deaths$Causes_name)
 map_data <- clean_deaths %>%
   filter(Entity != "All Countries") %>%
   mutate(CountryCode = countrycode(Entity , origin='country.name' , destination='iso3c'))
+
 map_regions <- c("World", levels(unique(getMap()$REGION)))
 
 # Helper Functions to create graphs 
-create_Percent_Graph <- function(selectedCountries, selectedYearRange) {
+PercentDeathGraph <- function(selectedCountries, selectedYearRange) {
   p <- clean_deaths %>%
     filter(Entity %in% selectedCountries, 
            Year %in% selectedYearRange) %>%
@@ -53,7 +53,7 @@ create_Percent_Graph <- function(selectedCountries, selectedYearRange) {
              aes(x = Percent_Deaths,
                  y = reorder(Causes_name, Percent_Deaths),
                  fill=Entity)) +
-    facet_wrap(~Year) +
+    facet_wrap(~Year, ncol = 2) +
     labs(x="Percent of Deaths", y = "Cause of Death") +
     guides(fill=guide_legend(title="Country")) + 
     scale_x_continuous(expand = c(0, 0))+ 
@@ -62,7 +62,7 @@ create_Percent_Graph <- function(selectedCountries, selectedYearRange) {
   return(p)
 }
 
-create_Number_Graph <- function(selectedCountries, selectedYearRange) {
+CountDeathGraph <- function(selectedCountries, selectedYearRange) {
   p <- clean_deaths %>%
     filter(Entity %in% selectedCountries, 
            Year %in% selectedYearRange) %>%
@@ -73,7 +73,7 @@ create_Number_Graph <- function(selectedCountries, selectedYearRange) {
              aes(x = Death_Numbers,
                  y = reorder(Causes_name, Death_Numbers),
                  fill=Entity)) + 
-    facet_wrap(~Year) +
+    facet_wrap(~Year, ncol = 2) +
     labs(x="Number of Deaths", y = "Cause of Death") +
     guides(fill=guide_legend(title="Country")) + 
     scale_x_continuous(expand = c(0, 0)) + 
@@ -82,14 +82,14 @@ create_Number_Graph <- function(selectedCountries, selectedYearRange) {
   return(p)
 }
 
-create_Number_Causes_Graph <- function(selectedCountries, selectedCauses) {
+PercentCausesGraph <- function(selectedCountries, selectedCauses) {
   p <- clean_deaths %>%
     filter(Entity %in% selectedCountries, 
            Causes_name %in% selectedCauses) %>%
     
     ggplot() + 
     geom_line(aes(x = Year, y = Death_Numbers, col = Entity)) + 
-    facet_wrap(~Causes_name) + 
+    facet_wrap(~Causes_name, ncol = 2) + 
     labs(y="Number of Deaths", x = "Year") +
     guides(col=guide_legend(title="Country")) + 
     scale_color_brewer(palette = color_theme) +
@@ -97,7 +97,7 @@ create_Number_Causes_Graph <- function(selectedCountries, selectedCauses) {
   return(p)
 }
 
-create_Percent_Causes_Graph <- function(selectedCountries, selectedCauses) {
+CountCausesGraph <- function(selectedCountries, selectedCauses) {
   p <- clean_deaths %>%
     filter(Entity %in% selectedCountries, 
            Causes_name %in% selectedCauses) %>%
@@ -108,7 +108,7 @@ create_Percent_Causes_Graph <- function(selectedCountries, selectedCauses) {
     
     ggplot() + 
     geom_line(aes(x = Year, y = Percent_Deaths, col = Entity)) + 
-    facet_wrap(~Causes_name) + 
+    facet_wrap(~Causes_name, ncol = 2) + 
     labs(y="Percent of Deaths", x = "Year") +
     guides(col=guide_legend(title="Country")) + 
     scale_color_brewer(palette = color_theme) +
@@ -117,6 +117,8 @@ create_Percent_Causes_Graph <- function(selectedCountries, selectedCauses) {
 }
 
 palette = colorRampPalette(brewer.pal(n=7, name='Oranges'))(7)
+
+# Create World Map 
 worldmap <- function(year, Cause, region){
   
   new_data <- map_data %>%
@@ -144,8 +146,15 @@ ui = fluidPage(
   # Create Tabs in the NavBar 
   navbarPage("Causes of Death",
              
+             # # Tab 0: Overview
+             # tabPanel(
+             #   titlePanel("Project Overview"), 
+             #   textOutput("Introduction")
+             # ), 
+             
              # Tab 1: Deaths by Country 
              tabPanel("Deaths by Country",
+                      
                       sidebarLayout(
                         # Sidebar 
                         sidebarPanel(
@@ -161,13 +170,14 @@ ui = fluidPage(
                           ), 
                           
                           # Select two years to facet by. 
-                          sliderInput("yearRange", 
-                                      label = h3("Year Range:"),
-                                      min = year_list[1], 
-                                      max = year_list[length(year_list)], 
-                                      value = c(year_list[1], year_list[length(year_list)]),
-                                      sep=""
-                          ), 
+                          selectizeInput(
+                            selected = c(year_list[1], year_list[length(year_list)]), 
+                            inputId = "yearRange", 
+                            label = h3("View Years:"),
+                            choices = year_list, 
+                            multiple = TRUE,
+                            options = list(create = FALSE), 
+                          ),
                           
                           # Toggle between Number and Percent Graphs 
                           switchInput(
@@ -180,7 +190,7 @@ ui = fluidPage(
                         
                         # Main Panel: 
                         mainPanel(
-                          plotOutput("barChart")
+                          plotOutput("deathsChart")
                         )
                       )
              ), 
@@ -265,21 +275,26 @@ ui = fluidPage(
 )
 
 server = function(input, output) {
-  output$barChart <- renderPlot({
-    if(input$yStyle){
-      create_Number_Graph(input$country, input$yearRange)
-    }else{
-      create_Percent_Graph(input$country, input$yearRange)
-    }
-  }, height = 600)
+  # Calculate height of plot
+  plotHeight <- reactive({550*(floor(length(input$yearRange)) + floor(length(input$yearRange)) %%2)/2})
   
+  # Render Tab 1 Deaths Plot 
+  output$deathsChart <- renderPlot({
+    if(input$yStyle){
+      CountDeathGraph(input$country, input$yearRange)
+    }else{
+      PercentDeathGraph(input$country, input$yearRange)
+    }
+  }, height = function(){plotHeight()})
+  
+  # Render Tab 2 Causes Plot 
   output$causeChart <- renderPlot({
     if(input$yStyle2){
-      create_Number_Causes_Graph(input$country2, input$causes)
+      PercentCausesGraph(input$country2, input$causes)
     }else{
-      create_Percent_Causes_Graph(input$country2, input$causes)
+      CountCausesGraph(input$country2, input$causes)
     }
-  }, height = 600)
+  }, height = function(){plotHeight()})
   
   output$map <- renderPlot({
     worldmap(input$mapYear, input$mapCause, input$region)
