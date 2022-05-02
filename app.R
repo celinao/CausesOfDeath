@@ -170,7 +170,7 @@ ui = fluidPage(
   # Create Tabs in the NavBar 
   navbarPage("Causes of Death",
              
-             # Tab 0: Overview
+             # Tab 1: Overview
              tabPanel("Overview", 
                titlePanel("Project Overview"),
                h3("How does the cause of death vary and change across countries and years?"), 
@@ -191,54 +191,52 @@ ui = fluidPage(
                p("Dataset from Causes of Death - Our World In Data at https://www.kaggle.com/datasets/ivanchvez/causes-of-death-our-world-in-data"), 
              ),
              
-             # Tab 1: Deaths by Country 
-             tabPanel("Deaths by Country",
-                      
+             # Tab 2: World map by cause
+             tabPanel("World Map",
                       fluidRow(
                         
-                        # Select Countries 
-                        column( width = 4, 
-                          selectizeInput(
-                            selected = "All Countries", 
-                            inputId = "country", 
-                            label = h3("Choose a Country:"),
-                            choices = country_list, 
-                            multiple = TRUE,
-                            options = list(create = FALSE), 
-                          )
-                          ), 
-                          
-                        # Select years to facet by. 
-                        column( width = 4, 
-                                selectizeInput(
-                                  selected = c(year_list[1], year_list[length(year_list)]), 
-                                  inputId = "yearRange", 
-                                  label = h3("View Years:"),
-                                  choices = year_list, 
-                                  multiple = TRUE,
-                                  options = list(create = FALSE), 
-                                )
+                        # Select Causes of Death 
+                        column(width = 4, 
+                               selectizeInput(
+                                 selected = "Acute hepatitis",
+                                 inputId = "mapCause",
+                                 label = h3("Choose a Cause:"),
+                                 choices = cause_list,
+                                 multiple = FALSE,
+                                 options = list(create = FALSE),
+                               )
                         ), 
-                          
-                        # Toggle between Number and Percent Graphs 
-                        column( width = 4, 
-                                h3("Switch y-axis: "), 
-                                switchInput(
-                                  inputId = "yStyle",
-                                  onLabel = "Number", 
-                                  offLabel = "Percent", 
-                                  size = "normal"
-                                )
+                        
+                        # Select Year Shown 
+                        column(width = 4, 
+                               selectizeInput(
+                                 selected = max(year_list),
+                                 inputId = "mapYear",
+                                 label = h3("Choose a Year:"),
+                                 choices = year_list,
+                                 multiple = FALSE,
+                                 options = list(create = FALSE),
+                               )
+                        ), 
+                        
+                        # Select Region View 
+                        column(width = 4, 
+                               selectizeInput(
+                                 selected = "World",
+                                 inputId = "region",
+                                 label = h3("Zoom into a Region:"),
+                                 choices = map_regions,
+                                 multiple = FALSE,
+                                 options = list(create = FALSE),
+                               )
                         )
                       ), 
                       
-                      # Deaths Barchart: 
-                      fluidRow(width = 11, 
-                               plotOutput("deathsChart")
-                      )
+                      # Plot World Map 
+                      fluidRow( width = 11, plotOutput("map"))
              ), 
              
-             # Tab 2: Deaths by Cause
+             # Tab 3: Deaths by Cause
              tabPanel("Deaths by Cause",
                       fluidRow(
                         
@@ -280,52 +278,55 @@ ui = fluidPage(
                       fluidRow( width = 11, 
                                plotOutput("causeChart")
                       )
-             ), 
+             ),
              
-             # Tab 3: World map by cause
-             tabPanel("World Map",
+             # Tab 4: Deaths by Country 
+             tabPanel("Deaths by Country",
+                      
                       fluidRow(
                         
-                        # Select Causes of Death 
-                        column(width = 4, 
-                               selectizeInput(
-                                 selected = "Acute hepatitis",
-                                 inputId = "mapCause",
-                                 label = h3("Choose a Cause:"),
-                                 choices = cause_list,
-                                 multiple = FALSE,
-                                 options = list(create = FALSE),
-                                 )
-                               ), 
+                        # Select Countries 
+                        column( width = 4, 
+                                selectizeInput(
+                                  selected = "All Countries", 
+                                  inputId = "country", 
+                                  label = h3("Choose a Country:"),
+                                  choices = country_list, 
+                                  multiple = TRUE,
+                                  options = list(create = FALSE), 
+                                )
+                        ), 
                         
-                        # Select Year Shown 
-                        column(width = 4, 
-                               selectizeInput(
-                                 selected = max(year_list),
-                                 inputId = "mapYear",
-                                 label = h3("Choose a Year:"),
-                                 choices = year_list,
-                                 multiple = FALSE,
-                                 options = list(create = FALSE),
-                                 )
-                               ), 
+                        # Select years to facet by. 
+                        column( width = 4, 
+                                selectizeInput(
+                                  selected = c(year_list[1], year_list[length(year_list)]), 
+                                  inputId = "yearRange", 
+                                  label = h3("View Years:"),
+                                  choices = year_list, 
+                                  multiple = TRUE,
+                                  options = list(create = FALSE), 
+                                )
+                        ), 
                         
-                        # Select Region View 
-                        column(width = 4, 
-                               selectizeInput(
-                                 selected = "World",
-                                 inputId = "region",
-                                 label = h3("Zoom into a Region:"),
-                                 choices = map_regions,
-                                 multiple = FALSE,
-                                 options = list(create = FALSE),
-                                 )
-                               )
+                        # Toggle between Number and Percent Graphs 
+                        column( width = 4, 
+                                h3("Switch y-axis: "), 
+                                switchInput(
+                                  inputId = "yStyle",
+                                  onLabel = "Number", 
+                                  offLabel = "Percent", 
+                                  size = "normal"
+                                )
+                        )
                       ), 
                       
-                      # Plot World Map 
-                      fluidRow( width = 11, plotOutput("map"))
-             )
+                      # Deaths Barchart: 
+                      fluidRow(width = 11, 
+                               plotOutput("deathsChart")
+                      )
+             ), 
+             
   )
 )
 
@@ -334,7 +335,7 @@ server = function(input, output) {
   plotHeight <- reactive({550*(length(input$yearRange) + length(input$yearRange) %%2)/2})
   plotHeight2 <- reactive({550*(length(input$causes) + length(input$causes) %%2)/2})
   
-  # Render Tab 1 Deaths Plot 
+  # Render Tab 4 Deaths Plot 
   output$deathsChart <- renderPlot({
     if(input$yStyle){
       CountDeathGraph(input$country, input$yearRange)
@@ -343,7 +344,7 @@ server = function(input, output) {
     }
   }, height = function(){plotHeight()})
   
-  # Render Tab 2 Causes Plot 
+  # Render Tab 3 Causes Plot 
   output$causeChart <- renderPlot({
     if(input$yStyle2){
       CountCausesGraph(input$country2, input$causes)
@@ -352,7 +353,7 @@ server = function(input, output) {
     }
   }, height = function(){plotHeight2()})
   
-  # Render Tab 3 World Map
+  # Render Tab 2 World Map
   output$map <- renderPlot({
     worldmap(input$mapYear, input$mapCause, input$region)
   }, height = 550)
