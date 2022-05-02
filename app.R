@@ -32,6 +32,10 @@ country_list <- unique(clean_deaths$Entity)
 year_list <- unique(clean_deaths$Year)
 cause_list <- unique(clean_deaths$Causes_name)
 
+top_causes_list <- clean_deaths %>%
+  filter(Entity == "All Countries", Year == 2019) %>%
+  slice_max(order_by = Death_Numbers, n = 20)
+
 # Adding Country Code for map 
 map_data <- clean_deaths %>%
   filter(Entity != "All Countries") %>%
@@ -49,7 +53,8 @@ PercentDeathGraph <- function(selectedCountries, selectedYearRange) {
     mutate(Total_Deaths = sum(Death_Numbers, na.rm = TRUE), 
            Percent_Deaths = 100*Death_Numbers/Total_Deaths, 
            Year = factor(Year)) %>%
-    ungroup() %>%
+    ungroup() %>% 
+    filter(Causes_name %in% top_causes_list$Causes_name) %>%
     
     ggplot() +
     geom_col(position = "dodge",
@@ -85,7 +90,7 @@ CountDeathGraph <- function(selectedCountries, selectedYearRange) {
   return(p)
 }
 
-PercentCausesGraph <- function(selectedCountries, selectedCauses) {
+CountCausesGraph <- function(selectedCountries, selectedCauses) {
   p <- clean_deaths %>%
     filter(Entity %in% selectedCountries, 
            Causes_name %in% selectedCauses) %>%
@@ -100,14 +105,14 @@ PercentCausesGraph <- function(selectedCountries, selectedCauses) {
   return(p)
 }
 
-CountCausesGraph <- function(selectedCountries, selectedCauses) {
+PercentCausesGraph <- function(selectedCountries, selectedCauses) {
   p <- clean_deaths %>%
-    filter(Entity %in% selectedCountries, 
-           Causes_name %in% selectedCauses) %>%
-    group_by(Entity, Causes_name) %>%
+    filter(Entity %in% selectedCountries,) %>%
+    group_by(Entity, Year) %>%
     mutate(Total_Deaths = sum(Death_Numbers, na.rm = TRUE), 
            Percent_Deaths = 100*Death_Numbers/Total_Deaths) %>%
     ungroup() %>%
+    filter(Causes_name %in% selectedCauses) %>%
     
     ggplot() + 
     geom_line(aes(x = Year, y = Percent_Deaths, col = Entity)) + 
@@ -126,7 +131,7 @@ worldmap <- function(year, Cause, region){
   new_data <- map_data %>%
     filter(Year == year) %>%
     group_by(Entity) %>%
-    mutate(Percent_Deaths = 100*Death_Numbers/sum(Death_Numbers)) %>%
+    mutate(Percent_Deaths = 100*Death_Numbers/sum(Death_Numbers, na.rm = TRUE)) %>%
     ungroup() %>%
     filter(Causes_name == Cause) %>%
     joinCountryData2Map(joinCode = "ISO3" , nameJoinColumn = "CountryCode") 
@@ -136,21 +141,21 @@ worldmap <- function(year, Cause, region){
   iter_num <- max_val/6 
   
   # Create Map 
-  mapCountryData(new_data, 
+  mapParams <- mapCountryData(new_data, 
                  nameColumnToPlot='Percent_Deaths', 
                  mapRegion = region, 
                  catMethod = if(max_val == 0) c(0, 1) else (seq(0, max_val+iter_num, iter_num)), 
                  colourPalette = palette,
                  oceanCol='light blue', 
                  missingCountryCol='dark grey', 
-                 mapTitle=paste(Cause, year, sep = " - "),
+                 mapTitle=paste(Cause, "-", year, "\nby Percent of Deaths"),
                  addLegend=TRUE,
-                 # aspect = 1
-  ) 
+  )
+  mapParams$legendText 
 }
 
 # TEXT 
-motivation <- "This interface was created to answer that question. We wanted to create a general interface so that every user could use it, regaurdless of their country. 
+motivation <- "This interface was created to answer that question. We wanted to create a general interface so that every user could use it, regardless of their country. 
 If a reader wants to know what causes of death are more prevalent in their country, they can focus on adjusting their lifestyle and risk factors to prevent those causes of death. 
 Additionally, users can look at the temporal trends of specific causes of deaths throughout each country."
 DeathsByCountry <- "The Deaths by Country tab allows users to investigate how the top causes of death in selected countries and years."
@@ -341,9 +346,9 @@ server = function(input, output) {
   # Render Tab 2 Causes Plot 
   output$causeChart <- renderPlot({
     if(input$yStyle2){
-      PercentCausesGraph(input$country2, input$causes)
-    }else{
       CountCausesGraph(input$country2, input$causes)
+    }else{
+      PercentCausesGraph(input$country2, input$causes)
     }
   }, height = function(){plotHeight2()})
   
