@@ -5,7 +5,6 @@ library("tidyverse")
 library(countrycode)
 library(rworldmap)
 library(RColorBrewer)
-
 th <- theme_minimal() + 
   theme(
     rect = element_blank(), 
@@ -22,7 +21,9 @@ th <- theme_minimal() +
   ) 
 theme_set(th)
 
+# Color Palettes 
 color_theme = "Paired"
+palette = colorRampPalette(brewer.pal(n=7, name='Oranges'))(7)
 
 # Read in data 
 clean_deaths <- readr::read_csv("data//deaths_with_AllCountries.csv")
@@ -33,7 +34,8 @@ cause_list <- unique(clean_deaths$Causes_name)
 # Adding Country Code for map 
 map_data <- clean_deaths %>%
   filter(Entity != "All Countries") %>%
-  mutate(CountryCode = countrycode(Entity , origin='country.name' , destination='iso3c'))
+  mutate(Entity = ifelse(Entity == "America", "United States", Entity), 
+         CountryCode = countrycode(Entity , origin='country.name' , destination='iso3c'))
 
 map_regions <- c("World", levels(unique(getMap()$REGION)))
 
@@ -116,28 +118,40 @@ CountCausesGraph <- function(selectedCountries, selectedCauses) {
   return(p)
 }
 
-palette = colorRampPalette(brewer.pal(n=7, name='Oranges'))(7)
-
 # Create World Map 
 worldmap <- function(year, Cause, region){
   
   new_data <- map_data %>%
-    filter(Year == year, Causes_name == Cause) %>%
-    joinCountryData2Map(joinCode = "ISO3" , nameJoinColumn = "CountryCode")
+    filter(Year == year) %>%
+    group_by(Entity) %>%
+    mutate(Percent_Deaths = 100*Death_Numbers/sum(Death_Numbers)) %>%
+    ungroup() %>%
+    filter(Causes_name == Cause) %>%
+    joinCountryData2Map(joinCode = "ISO3" , nameJoinColumn = "CountryCode") 
   
-  iter_num <- max(new_data$Death_Numbers, na.rm = TRUE)/8
+  max_val <- max(new_data$Percent_Deaths, na.rm = TRUE)
+  iter_num <- max_val/6 
   
   mapCountryData(new_data, 
-           nameColumnToPlot='Death_Numbers', 
-           missingCountryCol='dark grey', 
-           mapTitle=paste(Cause, year, sep = " - "),
-           addLegend=TRUE,
-           colourPalette = palette,
-           mapRegion = region, 
-           oceanCol='light blue', 
-           catMethod = seq(0, max(new_data$Death_Numbers, na.rm = TRUE)+iter_num, iter_num)
-  ) + th
+                 nameColumnToPlot='Percent_Deaths', 
+                 mapRegion = region, 
+                 catMethod = if(max_val == 0) c(0, 1) else (seq(0, max_val+iter_num, iter_num)), 
+                 colourPalette = palette,
+                 oceanCol='light blue', 
+                 missingCountryCol='dark grey', 
+                 mapTitle=paste(Cause, year, sep = " - "),
+                 addLegend=TRUE,
+  ) 
 }
+
+# TEXT 
+motivation <- "This interface was created to answer that question. We wanted to create a general interface so that every user could use it, regaurdless of their country. 
+If a reader wants to know what causes of death are more prevalent in their country, they can focus on adjusting their lifestyle and risk factors to prevent those causes of death. 
+Additionally, users can look at the temporal trends of specific causes of deaths throughout each country."
+DeathsByCountry <- "The Deaths by Country tab allows users to investigate how the top causes of death in selected countries and years."
+DeathsByCause <- "The Deaths by Country tab allows users to investigate trendlines of selected causes of death in selected countries between 1990 and 2019. "
+WorldMapDesc <- "The World Map tab visualizes the countries with the most deaths from the selected cause of death."
+
 
 # Shiny App 
 ui = fluidPage(
@@ -146,11 +160,25 @@ ui = fluidPage(
   # Create Tabs in the NavBar 
   navbarPage("Causes of Death",
              
-             # # Tab 0: Overview
-             # tabPanel(
-             #   titlePanel("Project Overview"), 
-             #   textOutput("Introduction")
-             # ), 
+             # Tab 0: Overview
+             tabPanel("Overview", 
+               titlePanel("Project Overview"),
+               h3("How does the cause of death vary and change across countries and years?"), 
+               p(motivation), 
+               
+               hr(), 
+               
+               h4("Deaths by Country"), 
+               p(DeathsByCountry), 
+               h4("Deaths by Cause"), 
+               p(DeathsByCause), 
+               h4("World Map"), 
+               p(WorldMapDesc), 
+               
+               hr(), 
+               
+               h3("Data Sources")
+             ),
              
              # Tab 1: Deaths by Country 
              tabPanel("Deaths by Country",
