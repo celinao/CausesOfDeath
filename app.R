@@ -220,24 +220,31 @@ ui = fluidPage(
                h3("Examining Maps"),
                fluidRow(
                  column(width = 4, 
+                        img(src = 'commonWorldMap.JPG', width = 400), 
                         p(commonWorldMap), 
                         ), 
                  column(width = 4, 
+                        img(src = 'TB1990.JPG', width = 400), 
                         p(regionalWorldMap)
                         ), 
                  column(width = 4, 
+                        img(src = 'DeathsByCountryGeneral.JPG', width = 400), 
                         p(generalDeathsByCountry))
                ), 
                
                h3("Examining One Cause of Death: HIV/AIDS"), 
                fluidRow(
                  column(width = 4, 
+                        img(src = 'HIV1990.JPG', width = 400), 
+                        img(src = 'HIV2019.JPG', width = 400), 
                         p(HIV1), 
                  ), 
                  column(width = 4, 
+                        img(src = 'HIV_Time.JPG', width = 400), 
                         p(HIV2)
                  ), 
                  column(width = 4, 
+                        img(src = 'HIV_Time_Count.JPG', width = 400), 
                         p(HIV3))
                ), 
                
