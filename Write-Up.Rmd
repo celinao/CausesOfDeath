@@ -1,0 +1,56 @@
+---
+title: "Write-Up"
+author: "Celina"
+date: '2022-05-08'
+output: html_document
+---
+
+# Essential Question 
+
+Our interface was created to answer how the causes of death vary and change across regions, countries, and years. We wanted to create a general interface so that every user could use it, regardless of their country. This means that readers can investigate causes of death most prevalent in their country and focus on adjusting their lifestyle and risk factors to prevent those causes of death. Alternatively, users can look at the temporal trends of specific causes of deaths around the world.
+
+# Interface Elements 
+The World Map tab allows you to see which countries are most impacted by each cause of death. You can select a cause of death and a year and a heat map will be generated, showing which countries have the highest percentage of deaths for each cause. You can use this data see where different causes are most common or to follow the spread of an epidemic across the years as it spreads to neighboring countries.
+
+The Deaths by Cause tab allows you to see how different disease trend through the years. You can select countries and causes and see how the percentage (or number) of deaths have increased or decreased through the years. You can use this to see spikes in deaths or to compare the number of deaths in different countries or between different causes.
+
+The Deaths by Country tab allows you to view a general overview of the most common causes of deaths in each country. It allows you to select countries and years and it displays the percent (or number) of deaths for twenty most common deaths. 
+
+# Interesting Findings  
+
+
+### The Containment of Tuberculosis  
+
+```{r, echo=FALSE,out.width="49%", out.height="20%",fig.cap="Figures 1 & 2: Tuberculosis",fig.show='hold',fig.align='center'}
+knitr::include_graphics(c("www/TB1990.JPG","www/TB2019.JPG"))
+```
+
+We found that the containment of tuberculosis is well visualized on our world map. Figure 1 shows that in 1990 the disease was highly concentrated in Sub-Saharan Africa and South/South-east Asia. However, Figure 2 shows that, while still concentrated in the same regions, the percent of each country dying from the disease has decreased. It is also notable that tuberculosis hasn't spread to nearby countries, we figure that this is because the TB vaccine was created in 1921 so even with immigration it is well contained elsewhere. 
+
+### The Spread of HIV/AIDS  
+
+```{r, echo=FALSE,out.width="49%", out.height="20%",fig.cap="Figures 3 & 4: HIV/AIDS Mapped",fig.show='hold',fig.align='center'}
+knitr::include_graphics(c("www/HIV2019.JPG","www/HIV1990.JPG"))
+```
+
+Looking at Figure 3, we can see that HIV/AIDS is very common in South Africa. However, you examine Figure 4, you can see that in the early 1990s HIV/AIDS was contained within a few counties like Uganda and Botswana. This implies that it spread from those countries to the neighboring countries like Uganda. 
+
+```{r, echo=FALSE,out.width="49%", out.height="20%",fig.cap="Figures 5 & 6: HIV/AIDS Time Trend",fig.show='hold',fig.align='center'}
+knitr::include_graphics(c("www/HIV_Time.JPG", "www/HIV_Time_Count.JPG"))
+```
+
+If you examine the HIV/AIDS trend in the Cause by Time tab in Figure 5, you can see more information on how it spread. By selecting the countries we saw in the world map (South Africa, Botswana, Tanzania, Uganda, Zambia, Zimbabwe) we can see that the Uganda's percent deaths was almost twice that of other countries in 1990. However, other countries quickly overtook Uganda until they too, declined, leaving South Africa as the current epicenter. 
+
+However, you may remember that the US had an HIV/AIDS epidemic in the early 90s. Where is that on the graph? Since the population of the US is much larger than that of other countries the percent of people who died from HIV is much lower than that of countries in Africa. However, if we change the y-axis to show deaths by numbers (Figure 6) we can see that while, it does have a higher number of deaths in the early 90s than countries like Zambia, Botswana the number has nothing on the number of people dying in South Africa right now.
+
+### The Top Causes of Death 
+
+```{r, echo=FALSE,out.width="49%", out.height="20%",fig.cap="Figures 7: Top Causes of Death",fig.show='hold',fig.align='center'}
+knitr::include_graphics(c("www/DeathsByCountryGeneral.JPG"))
+```
+
+If you examine the top causes of death in two countries like the United States and South Africa you can see that they have share the most common causes of death. However, you can also see that the causes of deaths in the US is highly concentrated on Cardiovascular Diseases and Neoplasms whereas, the deaths in South Africa is more evenly distributed amongst the top twenty causes (Figure 7).
+
+
+
+
